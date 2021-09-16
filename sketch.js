@@ -66,7 +66,7 @@ class Ball {
     }
 
     this.x = 300
-    this.y = 0
+    this.y = 450
 
   }
 
@@ -89,6 +89,8 @@ class Ball {
 
   move() {
 
+
+    // Bounce off walls
     if (this.x < this.size / 2) {
       this.x = this.size / 2
       this.v.x *= -0.65
@@ -99,11 +101,12 @@ class Ball {
       this.v.y *= 0.65
     }
 
-    if (this.y > floor - this.size / 2) {
+    if (this.y > floor - this.size / 2 - 1) {
 
-      // Bounce
+      // Bounce off floor
       this.y = floor - this.size / 2
       this.v.y *= -0.65
+      this.v.x *= 0.99
 
     } else {
 
