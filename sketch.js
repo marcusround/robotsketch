@@ -19,6 +19,7 @@ const HandCommand = {
   CLOSED: 0,
 }
 
+let score = 0
 
 const animatableParameters = {
   handt: HandCommand.OPEN,
@@ -27,7 +28,27 @@ const animatableParameters = {
   arm3t: 0.0,
 }
 
+const addRandomCommand = () => {
+  const { name, value } = generateRandomCommand()
+  addCommand(name, value)
+}
+
+const generateRandomCommand = () => {
+
+  const possibleCommands = Object.keys(animatableParameters)
+
+  const name = possibleCommands[Math.floor(Math.random() * possibleCommands.length)]
+  const value = (name === "handt") ? Math.round(Math.random()) : Math.random()
+
+  return { name, value }
+
+}
+
 const addCommand = (propertyName, value) => {
+
+  if (propertyName === "handt") {
+    value = 1 - animatableParameters.handt
+  }
 
   commandQueue.push(
     gsap.to(animatableParameters, {
@@ -35,7 +56,17 @@ const addCommand = (propertyName, value) => {
       duration: 1 + 2 * Math.random(),
       ease: "elastic.inOut(1.2, 0.75)",
       paused: true,
-      onComplete: () => { activeCommand = null }
+      onComplete: () => {
+        addRandomCommand()
+        activeCommand = null
+        if (propertyName === "handt") {
+          if (value === HandCommand.OPEN) {
+            ball.held = false
+          } else {
+            ball.held = true
+          }
+        }
+      }
     })
   )
 
@@ -180,16 +211,7 @@ class Ball {
 
 function setup() {
 
-  const possibleCommands = Object.keys(animatableParameters)
-
-  for (let i = 0; i < 120; i++) {
-
-    const commandName = possibleCommands[Math.floor(Math.random() * possibleCommands.length)]
-    const value = (commandName === "handt") ? Math.round(Math.random()) : Math.random()
-
-    addCommand(commandName, value)
-
-  }
+  addRandomCommand()
 
   rectMode(CENTER)
   createCanvas(600, 600)
@@ -214,9 +236,9 @@ function processCommandQueue() {
 
 function draw() {
 
-  processCommandQueue()
-
   background(bgColor)
+
+  processCommandQueue()
 
   // Floor
   fill('grey')
@@ -228,6 +250,9 @@ function draw() {
   fill('lightgrey')
   drawRobotArm()
 
+  fill('white')
+  textSize(18)
+  text(`Score: ${score}`, 20, 36)
 
 }
 
@@ -411,6 +436,9 @@ function drawRobotArm() {
 // }
 
 function sunkBasket() {
+
+  ball.held = false
+  score++
 
   bgColor = 'lightblue'
   window.setTimeout(() => {
