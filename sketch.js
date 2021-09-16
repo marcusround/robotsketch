@@ -9,7 +9,7 @@ const hoopHeight = 120
 
 const _hoopHeight = floor - hoopHeight
 
-const ballSize = 50
+const ballSize = 35
 
 const hoopX = 100
 const hoopWidth = ballSize * 1.4
@@ -365,9 +365,9 @@ function drawRobotArm() {
 
   // Draw basketball hoop
   fill('white')
-  const verticalRopes = 15
+  const verticalRopes = 10
   const horizontalRopes = 4
-  const basketDepth = 50
+  const basketDepth = ballSize * 1.2
   const basketShear = 0.12
   stroke('white')
   for (let i = 0; i < verticalRopes; i++) {
