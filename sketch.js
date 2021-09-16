@@ -14,6 +14,35 @@ const ballSize = 50
 const hoopX = 100
 const hoopWidth = ballSize * 1.4
 
+const HandCommand = {
+  OPEN: 1,
+  CLOSED: 0,
+}
+
+
+const animatableParameters = {
+  handt: HandCommand.OPEN,
+  arm1t: 0.0,
+  arm2t: 0.0,
+  arm3t: 0.0,
+}
+
+const addCommand = (propertyName, value) => {
+
+  commandQueue.push(
+    gsap.to(animatableParameters, {
+      [propertyName]: value,
+      duration: 1 + 2 * Math.random(),
+      ease: "elastic.inOut(1.2, 0.75)",
+      paused: true,
+      onComplete: () => { activeCommand = null }
+    })
+  )
+
+}
+
+const commandQueue = []
+
 class Transformer {
   // https://github.com/ChristerNilsson/Transformer
 
@@ -151,21 +180,41 @@ class Ball {
 
 function setup() {
 
+  const possibleCommands = Object.keys(animatableParameters)
+
+  for (let i = 0; i < 120; i++) {
+
+    const commandName = possibleCommands[Math.floor(Math.random() * possibleCommands.length)]
+    const value = (commandName === "handt") ? Math.round(Math.random()) : Math.random()
+
+    addCommand(commandName, value)
+
+  }
+
   rectMode(CENTER)
   createCanvas(600, 600)
 
   t = new Transformer()
 
+  ball = new Ball()
+
 }
 
-function init() {
-  if (ball) { return }
-  ball = new Ball()
+let activeCommand = null
+
+function processCommandQueue() {
+
+  if (activeCommand !== null) { return }
+  if (commandQueue.length === 0) { return }
+  const nextCommand = commandQueue.shift()
+  nextCommand.play()
+  activeCommand = nextCommand
+
 }
 
 function draw() {
 
-  init()
+  processCommandQueue()
 
   background(bgColor)
 
@@ -181,8 +230,6 @@ function draw() {
 
 
 }
-
-let hand_t = 1
 
 function drawRobotArm() {
 
@@ -208,13 +255,11 @@ function drawRobotArm() {
   const arm3upperLimit = arm2upperLimit
   const arm3lowerLimit = arm2lowerLimit
 
-  const arm1_t = mouseX / width
-  const arm2_t = mouseY / height
-  const arm3_t = arm1_t
+  const { handt, arm1t, arm2t, arm3t } = animatableParameters
 
-  const arm1Rotation = arm1lowerLimit + arm1_t * (arm1upperLimit - arm1lowerLimit)
-  const arm2Rotation = arm2lowerLimit + arm2_t * (arm2upperLimit - arm2lowerLimit)
-  const arm3Rotation = arm3lowerLimit + arm3_t * (arm3upperLimit - arm3lowerLimit)
+  const arm1Rotation = arm1lowerLimit + arm1t * (arm1upperLimit - arm1lowerLimit)
+  const arm2Rotation = arm2lowerLimit + arm2t * (arm2upperLimit - arm2lowerLimit)
+  const arm3Rotation = arm3lowerLimit + arm3t * (arm3upperLimit - arm3lowerLimit)
 
   const handSize = 50
 
@@ -223,7 +268,7 @@ function drawRobotArm() {
 
   // const hand_t = ( 1 + Math.sin(frameCount * 0.093) ) / 2
 
-  const handOpenness = lerp(handClosed, handOpen, hand_t)
+  const handOpenness = lerp(handClosed, handOpen, handt)
 
   const totalRotation = arm1Rotation + arm2Rotation + arm3Rotation
 
@@ -345,25 +390,25 @@ function drawRobotArm() {
 
 }
 
-function mousePressed() {
+// function mousePressed() {
 
-  if (hand_t === 0) {
-    ball.held = false
-    hand_t = 1
-    return
-  }
+//   if (hand_t === 0) {
+//     ball.held = false
+//     hand_t = 1
+//     return
+//   }
 
-  // Close hand
-  hand_t = 0
+//   // Close hand
+//   hand_t = 0
 
-  // Pick up ball?
-  const d = dist(ball.x, ball.y, lastHandX, lastHandY)
-  if (d < ball.size) {
-    ball.held = true
-  }
+//   // Pick up ball?
+//   const d = dist(ball.x, ball.y, lastHandX, lastHandY)
+//   if (d < ball.size) {
+//     ball.held = true
+//   }
 
 
-}
+// }
 
 function sunkBasket() {
 
