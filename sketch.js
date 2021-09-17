@@ -2,7 +2,6 @@ let ball
 let t
 let lastHandX, lastHandY, lastHandVX, lastHandVY
 
-let bgColor = 'darkblue'
 
 const floor = 500
 const hoopHeight = 120
@@ -14,6 +13,15 @@ const ballSize = 35
 const hoopX = 300
 const hoopWidth = ballSize * 1.4
 
+const palette = [
+  "#556270",
+  "#c44d58",
+  "#ff6b6b",
+  "#c7f464",
+  "#4ecdc4",
+]
+let bgColor = palette[0]
+
 const HandCommand = {
   OPEN: 1,
   CLOSED: 0,
@@ -22,23 +30,23 @@ const HandCommand = {
 let score = 0
 
 const animatableParameters = {
-  handt: HandCommand.OPEN,
-  arm1t: 0.0,
-  arm2t: 0.0,
-  arm3t: 0.0,
+  handt: HandCommand.CLOSED,
+  arm1t: 0,
+  arm2t: 0,
+  arm3t: 1,
 }
 
 const nameMapping = {
   handt: "HAND",
-  arm1t: "ARM START",
-  arm2t: "ARM MIDDLE",
-  arm3t: "ARM END",
+  arm1t: "START",
+  arm2t: "MIDDLE",
+  arm3t: "END",
 }
 
 const limits = {
   arm1t: {
-    upper: Math.PI * 1.45,
-    lower: Math.PI * 1.1,
+    upper: Math.PI * 1.1,
+    lower: Math.PI * 1.45,
   },
   arm2t: {
     upper: -Math.PI * 0.7,
@@ -54,14 +62,15 @@ const addRandomCommand = () => {
   addCommand(generateRandomCommand())
 }
 
-const generateRandomCommand = () => {
+const generateRandomCommand = (index) => {
 
   const possibleCommands = ['arm1t', 'arm2t', 'arm3t']
+  index = index === undefined ? Math.floor(Math.random() * possibleCommands.length) : index
 
-  const name = possibleCommands[Math.floor(Math.random() * possibleCommands.length)]
+  const name = possibleCommands[index]
   const value = Math.random()
 
-  return { name, value }
+  return { name, value, index }
 
 }
 
@@ -76,7 +85,7 @@ const addCommand = ({ name, value }) => {
     if (value === HandCommand.OPEN) { ball.held = false }
     if (
       value === HandCommand.CLOSED
-      && dist(lastHandX, lastHandY, ball.x, ball.y) < ball.size
+      && dist(lastHandX, lastHandY, ball.x, ball.y) < 2 * ball.size
     ) {
       ball.held = true
     }
@@ -157,8 +166,10 @@ class Ball {
       y: 0,
     }
 
-    this.x = 300
-    this.y = 450
+    this.x = width / 2
+    this.y = 250
+
+    this.held = true
 
   }
 
@@ -248,12 +259,13 @@ function setup() {
   createCanvas(900, 900)
 
   for (let i = 0; i < 3; i++) {
-    const card = new Card(generateRandomCommand())
+    const card = new Card(generateRandomCommand(i))
     card.x = (i + 1) * width / 4
+    card.index = i
     cards.push(card)
   }
 
-  addRandomCommand()
+  // addRandomCommand()
 
   t = new Transformer()
 
@@ -275,12 +287,13 @@ function processCommandQueue() {
 
 function draw() {
 
+  strokeWeight(2)
   background(bgColor)
 
   processCommandQueue()
 
   // Floor
-  fill('grey')
+  fill(palette[1])
   rect(0, floor + 1000, width * 2, 2000)
 
   ball.move()
@@ -292,7 +305,7 @@ function draw() {
 
   fill('white')
   textSize(18)
-  text(`Score: ${score}`, 60, 36)
+  text(`Score: ${score}`, width / 2, 36)
 
   for (const card of cards) {
     card.draw()
@@ -349,6 +362,7 @@ function drawRobotArm() {
    * Draw base
    */
 
+  fill(palette[1])
   arc(baseX, baseY, 90, 90, Math.PI - 0.2, 0.2, CHORD)
 
   /**
@@ -358,6 +372,7 @@ function drawRobotArm() {
   t.push()
 
   // fill('orange')
+  fill(palette[2])
 
   t.translate(baseX, baseY)
   t.rotate(arm1Rotation)
@@ -368,6 +383,7 @@ function drawRobotArm() {
    * Draw second part of arm
    */
 
+  fill(palette[3])
   t.push()
   t.translate(arm1length + 20, arm2Thickness / 2)
   t.rotate(arm2Rotation)
@@ -384,10 +400,12 @@ function drawRobotArm() {
    * Draw third part of arm
    */
 
+
   t.push()
   t.translate(arm2length, 0)
   t.rotate(arm3Rotation)
 
+  fill(palette[4])
   // fill('green')
 
   rect(arm3length / 2, 0, arm3length, arm3Thickness)
@@ -408,10 +426,11 @@ function drawRobotArm() {
   arc(0, handSize * 0.5, handSize, handSize * 0.8, -1.5 * Math.PI + handOpenness, 0.5 * Math.PI - handOpenness, OPEN)
 
   strokeWeight(10)
-  stroke('lightgrey')
+  stroke(palette[4])
+  // stroke('lightgrey')
   arc(0, handSize * 0.5, handSize, handSize * 0.8, -1.5 * Math.PI + handOpenness, 0.5 * Math.PI - handOpenness, OPEN)
 
-  fill('lightgrey')
+  fill(palette[4])
   stroke('black')
   strokeWeight(1)
   ellipse(0, 0, elbow3Size, elbow3Size)
@@ -464,6 +483,14 @@ function drawRobotArm() {
   textAlign(CENTER, CENTER)
   text("OPEN/CLOSE\nHAND", 800, 70)
 
+  fill('white')
+  stroke('black')
+  rect(100, 70, 160, 100)
+  noStroke()
+  fill('black')
+  textAlign(CENTER, CENTER)
+  text("RESET", 100, 70)
+
 }
 
 function mousePressed() {
@@ -483,6 +510,10 @@ function mousePressed() {
     addCommand({ name: 'handt', value: 1 - animatableParameters.handt })
   }
 
+  if (mouseX < 180 && mouseY < 120) {
+    reset()
+  }
+
 }
 
 function sunkBasket() {
@@ -490,9 +521,9 @@ function sunkBasket() {
   ball.held = false
   score++
 
-  bgColor = 'lightblue'
+  bgColor = palette[4]
   window.setTimeout(() => {
-    bgColor = 'darkblue'
+    bgColor = palette[0]
   }, 200)
 
 }
@@ -505,7 +536,7 @@ class Card {
     this.y = 700
 
     this.w = 175
-    this.h = 180
+    this.h = 200
 
     this.setCommand(command)
 
@@ -556,11 +587,25 @@ class Card {
     fill('black')
     textSize(26)
     textAlign(CENTER, CENTER)
+    const v = getHumanFriendlyValue(this.command.info.name, this.command.info.value)
     text(
-      `Set\n${nameMapping[this.command.info.name]}\nto\n${getHumanFriendlyValue(this.command.info.name, this.command.info.value)}`,
+      `Set\n${nameMapping[this.command.info.name]}\nto:\n${v}`,
       this.x,
-      this.y
+      this.y - 25
     )
+
+    if (!v) {
+      drawLine(
+        this.x,
+        this.y + 75,
+        lerp(
+          limits[this.command.info.name].lower,
+          limits[this.command.info.name].upper,
+          this.command.info.value + (this.command.info.name === "arm1t" ? Math.PI * -0.5 : 0)
+        ),
+        this.command.info.index + 2
+      )
+    }
 
     pop()
 
@@ -575,9 +620,53 @@ function getHumanFriendlyValue(name, value) {
     if (value === HandCommand.OPEN) { return "OPEN" }
   }
 
+  return ''
+
   const thisLimits = limits[name]
   const v = lerp(thisLimits.lower, thisLimits.upper, value)
 
   return degrees(v).toFixed(0) + '°'
+
+}
+
+function drawLine(startX, startY, a, index = 1) {
+
+  const segmentLength = 20
+
+  const _a = Math.PI * 1.5 + a
+
+  stroke('black')
+  strokeWeight(15)
+
+  const midX = startX
+  const midY = startY - segmentLength
+
+  line(startX, startY, midX, midY)
+  line(midX, midY, midX + segmentLength * 2 * cos(_a), midY + segmentLength * 2 * sin(_a))
+
+  strokeWeight(10)
+  stroke(palette[index - 1])
+  line(startX, startY, midX, midY)
+
+  fill(palette[index])
+  stroke('black')
+  strokeWeight(2)
+  ellipse(midX, midY, 15)
+  stroke(palette[index])
+  strokeWeight(10)
+  line(midX, midY, midX + segmentLength * 2 * cos(_a), midY + segmentLength * 2 * sin(_a))
+
+}
+
+function reset() {
+
+  score = 0
+
+  animatableParameters.handt = HandCommand.CLOSED
+  animatableParameters.arm1t = 0
+  animatableParameters.arm2t = 0
+  animatableParameters.arm3t = 1
+
+  ball.held = true
 
 }
