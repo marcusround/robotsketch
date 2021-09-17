@@ -506,11 +506,11 @@ function mousePressed() {
 
   }
 
-  if (mouseX > 720 && mouseY < 120) {
+  if (mouseX > 720 && mouseY < 120 && mouseX < width && mouseY > 0) {
     addCommand({ name: 'handt', value: 1 - animatableParameters.handt })
   }
 
-  if (mouseX < 180 && mouseY < 120) {
+  if (mouseX < 180 && mouseY < 120 && mouseX < width && mouseY > 0) {
     reset()
   }
 
