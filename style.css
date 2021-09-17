@@ -4,5 +4,24 @@ html, body {
 }
 
 canvas {
+  /* display: block; */
+  /* position: absolute;
+  top: 0;
+  right: 0;*/
+  padding: 30px;
+}
+
+#copy {
   display: block;
+  /* position: absolute; */
+  top: 0;
+  left: 0;
+  width: 40%;
+  padding: 30px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-size: x-large;
+}
+
+p {
+  margin-bottom: 30px;
 }
