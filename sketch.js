@@ -11,7 +11,7 @@ const _hoopHeight = floor - hoopHeight
 
 const ballSize = 35
 
-const hoopX = 100
+const hoopX = 300
 const hoopWidth = ballSize * 1.4
 
 const HandCommand = {
@@ -28,47 +28,79 @@ const animatableParameters = {
   arm3t: 0.0,
 }
 
+const nameMapping = {
+  handt: "HAND",
+  arm1t: "ARM START",
+  arm2t: "ARM MIDDLE",
+  arm3t: "ARM END",
+}
+
+const limits = {
+  arm1t: {
+    upper: Math.PI * 1.45,
+    lower: Math.PI * 1.1,
+  },
+  arm2t: {
+    upper: -Math.PI * 0.7,
+    lower: Math.PI * 0.1
+  },
+  arm3t: {
+    upper: -Math.PI * 0.7,
+    lower: Math.PI * 0.1
+  }
+}
+
 const addRandomCommand = () => {
-  const { name, value } = generateRandomCommand()
-  addCommand(name, value)
+  addCommand(generateRandomCommand())
 }
 
 const generateRandomCommand = () => {
 
-  const possibleCommands = Object.keys(animatableParameters)
+  const possibleCommands = ['arm1t', 'arm2t', 'arm3t']
 
   const name = possibleCommands[Math.floor(Math.random() * possibleCommands.length)]
-  const value = (name === "handt") ? Math.round(Math.random()) : Math.random()
+  const value = Math.random()
 
   return { name, value }
 
 }
 
-const addCommand = (propertyName, value) => {
+const addCommand = ({ name, value }) => {
 
-  if (propertyName === "handt") {
-    value = 1 - animatableParameters.handt
+  // if (name === "handt") {
+  //   value = 1 - animatableParameters.handt
+  // }
+
+  const pickUpBall = () => {
+    if (name !== "handt") { return }
+    if (value === HandCommand.OPEN) { ball.held = false }
+    if (
+      value === HandCommand.CLOSED
+      && dist(lastHandX, lastHandY, ball.x, ball.y) < ball.size
+    ) {
+      ball.held = true
+    }
   }
 
-  commandQueue.push(
-    gsap.to(animatableParameters, {
-      [propertyName]: value,
-      duration: 1 + 2 * Math.random(),
-      ease: "elastic.inOut(1.2, 0.75)",
-      paused: true,
-      onComplete: () => {
-        addRandomCommand()
-        activeCommand = null
-        if (propertyName === "handt") {
-          if (value === HandCommand.OPEN) {
-            ball.held = false
-          } else {
-            ball.held = true
-          }
-        }
-      }
-    })
-  )
+  const command = gsap.to(animatableParameters, {
+    [name]: value,
+    duration: 1 + 2 * Math.random(),
+    ease: "elastic.inOut(1.2, 0.75)",
+    paused: true,
+    onComplete: () => {
+      activeCommand = null
+      pickUpBall()
+    }
+  })
+
+  command.info = {
+    name,
+    value,
+  }
+
+  commandQueue.push(command)
+
+
 
 }
 
@@ -209,12 +241,19 @@ class Ball {
 
 }
 
+const cards = []
 function setup() {
 
-  addRandomCommand()
-
   rectMode(CENTER)
-  createCanvas(600, 600)
+  createCanvas(900, 900)
+
+  for (let i = 0; i < 3; i++) {
+    const card = new Card(generateRandomCommand())
+    card.x = (i + 1) * width / 4
+    cards.push(card)
+  }
+
+  addRandomCommand()
 
   t = new Transformer()
 
@@ -242,23 +281,28 @@ function draw() {
 
   // Floor
   fill('grey')
-  rect(0, floor + 100, width * 2, 200)
+  rect(0, floor + 1000, width * 2, 2000)
 
   ball.move()
   ball.draw()
 
   fill('lightgrey')
+  stroke('black')
   drawRobotArm()
 
   fill('white')
   textSize(18)
-  text(`Score: ${score}`, 20, 36)
+  text(`Score: ${score}`, 60, 36)
+
+  for (const card of cards) {
+    card.draw()
+  }
 
 }
 
 function drawRobotArm() {
 
-  const baseX = 500
+  const baseX = 700
   const baseY = floor
 
   const elbowPadding = 10
@@ -271,14 +315,14 @@ function drawRobotArm() {
   const arm2length = 120
   const arm3length = 180
 
-  const arm1upperLimit = Math.PI * 1.45
-  const arm1lowerLimit = Math.PI * 1.1
+  const arm1upperLimit = limits.arm1t.upper
+  const arm1lowerLimit = limits.arm1t.lower
 
-  const arm2upperLimit = -Math.PI * 0.7
-  const arm2lowerLimit = Math.PI * 0.1
+  const arm2upperLimit = limits.arm2t.upper
+  const arm2lowerLimit = limits.arm2t.lower
 
-  const arm3upperLimit = arm2upperLimit
-  const arm3lowerLimit = arm2lowerLimit
+  const arm3upperLimit = limits.arm3t.upper
+  const arm3lowerLimit = limits.arm3t.lower
 
   const { handt, arm1t, arm2t, arm3t } = animatableParameters
 
@@ -391,7 +435,6 @@ function drawRobotArm() {
   // Draw basketball hoop
   fill('white')
   const verticalRopes = 10
-  const horizontalRopes = 4
   const basketDepth = ballSize * 1.2
   const basketShear = 0.12
   stroke('white')
@@ -413,27 +456,34 @@ function drawRobotArm() {
 
   t.pop()
 
+  fill('white')
+  stroke('black')
+  rect(800, 70, 160, 100)
+  noStroke()
+  fill('black')
+  textAlign(CENTER, CENTER)
+  text("OPEN/CLOSE\nHAND", 800, 70)
+
 }
 
-// function mousePressed() {
+function mousePressed() {
 
-//   if (hand_t === 0) {
-//     ball.held = false
-//     hand_t = 1
-//     return
-//   }
+  for (const card of cards) {
 
-//   // Close hand
-//   hand_t = 0
+    const d = dist(mouseX, mouseY, card.x, card.y)
+    if (d < 100) {
 
-//   // Pick up ball?
-//   const d = dist(ball.x, ball.y, lastHandX, lastHandY)
-//   if (d < ball.size) {
-//     ball.held = true
-//   }
+      card.activate()
 
+    }
 
-// }
+  }
+
+  if (mouseX > 720 && mouseY < 120) {
+    addCommand({ name: 'handt', value: 1 - animatableParameters.handt })
+  }
+
+}
 
 function sunkBasket() {
 
@@ -444,5 +494,90 @@ function sunkBasket() {
   window.setTimeout(() => {
     bgColor = 'darkblue'
   }, 200)
+
+}
+
+class Card {
+
+  constructor(command) {
+
+    this.x = 400
+    this.y = 700
+
+    this.w = 175
+    this.h = 180
+
+    this.setCommand(command)
+
+  }
+
+  setCommand(command) {
+
+    this.command = {}
+    this.command.info = command || {
+      name: '',
+      value: 0,
+    }
+
+  }
+
+  activate() {
+    addCommand(this.command.info)
+
+    gsap.to(this, {
+      y: 1000,
+      ease: "power2.in",
+      duration: 0.5,
+      repeat: 1,
+      repeatDelay: 2,
+      yoyo: true,
+      onRepeat: () => {
+        this.setCommand(generateRandomCommand())
+      }
+    })
+  }
+
+  draw() {
+
+    push()
+
+    fill('white')
+    stroke('black')
+    strokeWeight(2)
+
+    rect(
+      this.x,
+      this.y,
+      this.w,
+      this.h
+    )
+
+    noStroke()
+    fill('black')
+    textSize(26)
+    textAlign(CENTER, CENTER)
+    text(
+      `Set\n${nameMapping[this.command.info.name]}\nto\n${getHumanFriendlyValue(this.command.info.name, this.command.info.value)}`,
+      this.x,
+      this.y
+    )
+
+    pop()
+
+  }
+
+}
+
+function getHumanFriendlyValue(name, value) {
+
+  if (name === "handt") {
+    if (value === HandCommand.CLOSED) { return "CLOSED" }
+    if (value === HandCommand.OPEN) { return "OPEN" }
+  }
+
+  const thisLimits = limits[name]
+  const v = lerp(thisLimits.lower, thisLimits.upper, value)
+
+  return degrees(v).toFixed(0) + '°'
 
 }
