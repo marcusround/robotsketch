@@ -648,10 +648,17 @@ function drawLine(startX, startY, a, index = 1) {
   stroke(palette[index - 1])
   line(startX, startY, midX, midY)
 
-  fill(palette[index])
   stroke('black')
   strokeWeight(2)
-  ellipse(midX, midY, 15)
+
+  if (index === 2) {
+    fill(palette[index - 1])
+    arc(startX, startY, 40, 40, Math.PI - 0.3, 0.3, CHORD)
+  } else {
+    fill(palette[index])
+    ellipse(midX, midY, 15)
+  }
+
   stroke(palette[index])
   strokeWeight(10)
   line(midX, midY, midX + segmentLength * 2 * cos(_a), midY + segmentLength * 2 * sin(_a))
