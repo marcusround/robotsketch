@@ -29,6 +29,8 @@ const HandCommand = {
 
 let score = 0
 
+let commandGenIndex = 0
+
 const animatableParameters = {
   handt: HandCommand.CLOSED,
   arm1t: 0,
@@ -65,7 +67,7 @@ const addRandomCommand = () => {
 const generateRandomCommand = (index) => {
 
   const possibleCommands = ['arm1t', 'arm2t', 'arm3t']
-  index = index === undefined ? Math.floor(Math.random() * possibleCommands.length) : index
+  index = index === undefined ? commandGenIndex++ % possibleCommands.length : index
 
   const name = possibleCommands[index]
   const value = Math.random()
@@ -258,9 +260,9 @@ function setup() {
   rectMode(CENTER)
   createCanvas(900, 900)
 
-  for (let i = 0; i < 3; i++) {
-    const card = new Card(generateRandomCommand(i))
-    card.x = (i + 1) * width / 4
+  for (let i = 0; i < 5; i++) {
+    const card = new Card(generateRandomCommand(i % 3))
+    card.x = (i + 1) * width / 6
     card.index = i
     cards.push(card)
   }
@@ -535,8 +537,8 @@ class Card {
     this.x = 400
     this.y = 700
 
-    this.w = 175
-    this.h = 200
+    this.w = 125
+    this.h = 125
 
     this.setCommand(command)
 
@@ -588,16 +590,16 @@ class Card {
     textSize(26)
     textAlign(CENTER, CENTER)
     const v = getHumanFriendlyValue(this.command.info.name, this.command.info.value)
-    text(
-      `Set\n${nameMapping[this.command.info.name]}\nto:\n${v}`,
-      this.x,
-      this.y - 25
-    )
+    // text(
+    //   `Set\n${nameMapping[this.command.info.name]}\nto:\n${v}`,
+    //   this.x,
+    //   this.y - 25
+    // )
 
     if (!v) {
       drawLine(
         this.x,
-        this.y + 75,
+        this.y + 25,
         lerp(
           limits[this.command.info.name].lower,
           limits[this.command.info.name].upper,
